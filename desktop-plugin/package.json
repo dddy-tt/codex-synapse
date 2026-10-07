@@ -1,0 +1,15 @@
+{
+  "name": "codex-synapse-desktop-panel",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "check": "node --check mcp-server.mjs && node --check src/embedded-bridge.js && node --check ../public/app.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/ext-apps": "^2.0.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^4.6.5"
+  }
+}

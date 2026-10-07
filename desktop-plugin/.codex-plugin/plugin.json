@@ -1,0 +1,16 @@
+{
+  "name": "codex-synapse",
+  "version": "0.1.0",
+  "description": "Local Codex conversation map with branches and follow-up conversations.",
+  "author": { "name": "Local" },
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Synapse 会话地图",
+    "shortDescription": "查看 Codex 对话地图并创建追问分支",
+    "longDescription": "在本机查看 Codex 会话、从任意可分叉轮次创建分支，并继续追问。",
+    "developerName": "Local",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "brandColor": "#176B58"
+  }
+}

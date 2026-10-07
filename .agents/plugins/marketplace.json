@@ -1,0 +1,12 @@
+{
+  "name": "synapse-local",
+  "interface": { "displayName": "Synapse Local" },
+  "plugins": [
+    {
+      "name": "codex-synapse",
+      "source": { "source": "local", "path": "./desktop-plugin" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Productivity"
+    }
+  ]
+}

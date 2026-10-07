@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Codex Synapse</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <aside class="side">
+      <div class="brand"><span class="mark">✦</span><div><p>CODEX</p><h1>Synapse</h1></div></div>
+      <label class="finder"><span>⌕</span><input id="search" placeholder="查找会话或工作区"></label>
+      <div class="list-heading"><span>本地会话</span><strong id="count">—</strong></div>
+      <div id="session-list" class="session-list"></div>
+      <div class="side-bottom"><span class="pulse"></span><span id="status">读取本地会话记录</span></div>
+    </aside>
+    <section class="stage">
+      <header>
+        <div><p class="eyebrow">CONVERSATION MAP</p><h2 id="session-title">选择一个会话</h2><span id="session-meta"></span></div>
+        <div class="actions"><button id="fit">定位开头</button><button class="solid" id="reload">刷新记录</button><button id="details" aria-expanded="false">显示详情</button></div>
+      </header>
+      <div id="canvas" class="canvas" aria-label="Codex 对话地图">
+        <svg id="wires" aria-hidden="true"></svg>
+        <div id="nodes"></div>
+        <div id="empty" class="empty">选择左侧会话，查看每轮对话</div>
+      </div>
+      <footer><span>滚轮缩放 · 拖拽移动 · 点卡片创建分支和追问</span><span id="updated"></span></footer>
+    </section>
+    <aside class="inspector" id="inspector"><p class="eyebrow">TURN DETAIL</p><div class="blank">选择一张对话卡片<br>查看问题和回答全文</div></aside>
+  </main>
+  <template id="card-template">
+    <button class="card"><span class="card-dot"></span><span class="card-date"></span><strong class="card-prompt"></strong><span class="card-answer"></span><em></em></button>
+  </template>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

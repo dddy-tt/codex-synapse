@@ -1,0 +1,8 @@
+node_modules/
+.npm-cache/
+data/
+desktop-plugin/.mcp.json
+desktop-plugin/dist/
+*.log
+*.png
+*.mp4
