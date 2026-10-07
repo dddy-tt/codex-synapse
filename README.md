@@ -6,15 +6,21 @@
 
 ## 本地安装
 
-需要 Windows、Node.js、Codex CLI 和 Codex 桌面端。首次使用时在仓库目录运行：
+需要 Windows、Git、Node.js、Codex CLI 和 Codex 桌面端。下面是本机插件安装流程，在 PowerShell 中运行：
 
 ```powershell
+git clone https://github.com/dddy-tt/codex-synapse.git
+cd codex-synapse
 npm --prefix desktop-plugin ci
 npm --prefix desktop-plugin run build
 .\setup-plugin.ps1
+codex plugin marketplace add .
+codex plugin add codex-synapse@synapse-local
 ```
 
-随后将 `desktop-plugin` 目录注册为 Codex 本地插件，并在桌面端打开它。`setup-plugin.ps1` 会根据当前机器生成 `desktop-plugin/.mcp.json`；这个文件和本地会话数据都不会进入 Git 仓库。会话目录默认使用 `CODEX_HOME/sessions`，未设置 `CODEX_HOME` 时使用当前用户的 `.codex/sessions`；也可用 `CODEX_SESSIONS_DIR` 指定。
+重启 Codex 桌面端，从左侧插件入口打开“Synapse 会话地图”。`setup-plugin.ps1` 会根据当前机器生成 `desktop-plugin/.mcp.json`；这个文件和本地会话数据都不会进入 Git 仓库。生成的配置引用克隆目录的绝对路径，因此安装后不要移动或删除该目录。会话目录默认使用 `CODEX_HOME/sessions`，未设置 `CODEX_HOME` 时使用当前用户的 `.codex/sessions`；也可用 `CODEX_SESSIONS_DIR` 指定。
+
+这是本地插件安装，不是从 GitHub 自动安装，也没有发布到 Codex 公共插件目录。本项目在 Windows 11、Node.js 24.16.0、Codex CLI 0.147.0 上验证过；其他版本尚未逐一测试。
 
 ## 在 Codex 桌面端使用
 
