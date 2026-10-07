@@ -1,10 +1,10 @@
 {
   "name": "codex-synapse",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
-    "check": "node --check server.mjs && node --check public/app.js"
+    "check": "node --check server.mjs && node --check desktop-plugin/src/app.js"
   }
 }

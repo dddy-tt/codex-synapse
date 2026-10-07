@@ -7,10 +7,10 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { registerAppResource, registerAppTool, RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server'
 import { z } from 'zod'
 
-const URI = 'ui://codex-synapse/map-v5.html'
+const URI = 'ui://codex-synapse/map-v7.html'
 const html = readFileSync(fileURLToPath(new URL('./dist/panel.html', import.meta.url)), 'utf8')
 const server = new McpServer(
-  { name: 'codex-synapse', version: '0.1.0' },
+  { name: 'codex-synapse', version: '0.3.0' },
   { capabilities: { extensions: { 'io.modelcontextprotocol/ui': {} } } },
 )
 const webRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')

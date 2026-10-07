@@ -1,7 +1,6 @@
 import { createServer } from 'node:http'
 import { readFile, readdir, stat, mkdir, writeFile } from 'node:fs/promises'
-import { createReadStream } from 'node:fs'
-import { extname, join, normalize, resolve, sep } from 'node:path'
+import { join, resolve, sep } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { spawn } from 'node:child_process'
 import { homedir } from 'node:os'
@@ -9,12 +8,9 @@ import { CodexClient } from './codex-client.mjs'
 
 const PORT = Number(process.env.PORT ?? 4318)
 const SESSION_ROOT = resolve(process.env.CODEX_SESSIONS_DIR ?? join(process.env.CODEX_HOME ?? join(homedir(), '.codex'), 'sessions'))
-const PUBLIC_ROOT = resolve('public')
 const BRANCH_FILE = resolve('data/branches.json')
 const MAX_FILES = 600
 const MAX_SNIPPET = 170
-
-const contentType = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml' }
 
 function cleanText(value) {
   return String(value ?? '').replace(/\s+/g, ' ').trim()
@@ -302,12 +298,6 @@ function sendJson(res, value, status = 200) {
   res.end(JSON.stringify(value))
 }
 
-function safePublicPath(urlPath) {
-  const wanted = urlPath === '/' ? '/index.html' : urlPath
-  const file = resolve(PUBLIC_ROOT, `.${normalize(wanted)}`)
-  return file.startsWith(PUBLIC_ROOT + sep) ? file : null
-}
-
 const server = createServer(async (req, res) => {
   const requestUrl = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`)
   try {
@@ -370,12 +360,7 @@ const server = createServer(async (req, res) => {
       if (!file.startsWith(SESSION_ROOT + sep)) return sendJson(res, { error: 'Session not found' }, 404)
       return sendJson(res, { session: row, turns: await parseConversation(file), branches: (await readBranches()).filter(branch => branch.sourceId === row.id) })
     }
-    const file = safePublicPath(requestUrl.pathname)
-    if (!file) return sendJson(res, { error: 'Not found' }, 404)
-    const info = await stat(file).catch(() => null)
-    if (!info?.isFile()) return sendJson(res, { error: 'Not found' }, 404)
-    res.writeHead(200, { 'content-type': contentType[extname(file)] ?? 'application/octet-stream', 'cache-control': 'no-store' })
-    createReadStream(file).on('error', () => res.destroy()).pipe(res)
+    return sendJson(res, { error: 'Not found' }, 404)
   } catch (error) {
     if (res.headersSent) res.destroy()
     else sendJson(res, { error: error instanceof Error ? error.message : 'Unknown error' }, 500)
@@ -391,6 +376,6 @@ updateBranches(rows => {
     }
   }
 }).then(() => server.listen(PORT, '127.0.0.1', () => {
-  console.log(`Codex Synapse is running at http://127.0.0.1:${PORT}`)
+  console.log(`Codex Synapse local API is running at http://127.0.0.1:${PORT}`)
   console.log(`Read-only session source: ${SESSION_ROOT}`)
 })).catch(error => { console.error(error); process.exitCode = 1 })

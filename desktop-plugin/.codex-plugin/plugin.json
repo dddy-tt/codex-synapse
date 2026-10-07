@@ -1,6 +1,6 @@
 {
   "name": "codex-synapse",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Local Codex conversation map with branches and follow-up conversations.",
   "author": { "name": "Local" },
   "mcpServers": "./.mcp.json",

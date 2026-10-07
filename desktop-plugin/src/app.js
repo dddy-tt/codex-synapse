@@ -19,6 +19,7 @@ let selectedTurnNumber = null
 let draftTurn = null
 const openProjects = new Set()
 let searchOpenProjects = null
+let listView = 'projects'
 
 function setInspectorOpen(open) {
   shell.classList.toggle('inspector-open', open)
@@ -285,59 +286,70 @@ function renderMap() {
   wires.style.height = `${Math.max(canvas.clientHeight, totalRows * 270 + 100)}px`
   transform()
 }
+function appendSessionButton(container, session, showWorkspace) {
+  const button = document.createElement('button')
+  button.className = 'session-item'
+  button.classList.toggle('selected', session.id === selectedSession?.id)
+  button.title = session.cwd
+  button.innerHTML = `<strong>${escapeHtml(session.title)}</strong><small>${showWorkspace ? `${escapeHtml(workspaceName(session.cwd))} · ` : ''}${formatTime(session.updatedAt)}</small>`
+  button.addEventListener('click', () => selectSession(session))
+  container.append(button)
+}
 function renderList(expandMatches = false) {
   const term = search.value.trim().toLowerCase()
   const matches = sessions.filter(s => !term || `${s.title} ${s.cwd}`.toLowerCase().includes(term))
-  const groupsByKey = new Map()
-  for (const session of matches) {
-    const key = projectKey(session.cwd)
-    if (!groupsByKey.has(key)) groupsByKey.set(key, { key, cwd:session.cwd, sessions:[] })
-    groupsByKey.get(key).sessions.push(session)
-  }
-  const groups = [...groupsByKey.values()].sort((a, b) => (a.key === '@unlinked') - (b.key === '@unlinked'))
-  if (term) {
-    if (expandMatches || !searchOpenProjects) searchOpenProjects = new Set(groups.map(group => group.key))
-  } else searchOpenProjects = null
-  const expandedProjects = searchOpenProjects ?? openProjects
+  document.querySelector('#view-projects').setAttribute('aria-pressed', String(listView === 'projects'))
+  document.querySelector('#view-all').setAttribute('aria-pressed', String(listView === 'all'))
   list.replaceChildren()
-  for (const group of groups) {
-    const section = document.createElement('section')
-    section.className = 'project-group'
-    const heading = document.createElement('button')
-    heading.type = 'button'
-    heading.className = 'project-heading'
-    heading.classList.toggle('has-selected', group.key === projectKey(selectedSession?.cwd))
-    heading.title = group.cwd
-    const isOpen = expandedProjects.has(group.key)
-    heading.setAttribute('aria-expanded', String(isOpen))
-    heading.setAttribute('aria-label', `${isOpen ? '收起' : '展开'}项目 ${workspaceName(group.cwd)}，${group.sessions.length} 条会话`)
-    heading.innerHTML = `<span class="project-chevron" aria-hidden="true">▸</span><span class="project-label"><strong>${escapeHtml(workspaceName(group.cwd))}</strong><small>${escapeHtml(group.cwd)}</small></span><span class="project-count">${group.sessions.length}</span>`
-    const content = document.createElement('div')
-    content.className = 'project-sessions'
-    content.hidden = !isOpen
-    heading.addEventListener('click', () => {
-      if (expandedProjects.has(group.key)) expandedProjects.delete(group.key)
-      else expandedProjects.add(group.key)
-      renderList()
-    })
-    for (const session of group.sessions) {
-      const button = document.createElement('button')
-      button.className = 'session-item'
-      button.classList.toggle('selected', session.id === selectedSession?.id)
-      button.innerHTML = `<strong>${escapeHtml(session.title)}</strong><small>${formatTime(session.updatedAt)}</small>`
-      button.addEventListener('click', () => selectSession(session))
-      content.append(button)
+  if (listView === 'all') {
+    for (const session of matches) appendSessionButton(list, session, true)
+    document.querySelector('#count').textContent = `${matches.length} 条`
+  } else {
+    const groupsByKey = new Map()
+    for (const session of matches) {
+      const key = projectKey(session.cwd)
+      if (!groupsByKey.has(key)) groupsByKey.set(key, { key, cwd:session.cwd, sessions:[] })
+      groupsByKey.get(key).sessions.push(session)
     }
-    section.append(heading, content)
-    list.append(section)
+    const groups = [...groupsByKey.values()].sort((a, b) => (a.key === '@unlinked') - (b.key === '@unlinked'))
+    if (term) {
+      if (expandMatches || !searchOpenProjects) searchOpenProjects = new Set(groups.map(group => group.key))
+    } else searchOpenProjects = null
+    const expandedProjects = searchOpenProjects ?? openProjects
+    for (const group of groups) {
+      const section = document.createElement('section')
+      section.className = 'project-group'
+      const heading = document.createElement('button')
+      heading.type = 'button'
+      heading.className = 'project-heading'
+      heading.classList.toggle('has-selected', group.key === projectKey(selectedSession?.cwd))
+      heading.title = group.cwd
+      const isUnlinked = group.key === '@unlinked'
+      const isOpen = isUnlinked || expandedProjects.has(group.key)
+      if (isUnlinked) heading.disabled = true
+      heading.setAttribute('aria-expanded', String(isOpen))
+      heading.setAttribute('aria-label', isUnlinked ? `未归类会话，${group.sessions.length} 条` : `${isOpen ? '收起' : '展开'}项目 ${workspaceName(group.cwd)}，${group.sessions.length} 条会话`)
+      heading.innerHTML = `<span class="project-chevron" aria-hidden="true">${isUnlinked ? '·' : '▸'}</span><span class="project-label"><strong>${escapeHtml(isUnlinked ? '未归类会话' : workspaceName(group.cwd))}</strong><small>${escapeHtml(group.cwd)}</small></span><span class="project-count">${group.sessions.length}</span>`
+      const content = document.createElement('div')
+      content.className = 'project-sessions'
+      content.hidden = !isOpen
+      if (!isUnlinked) heading.addEventListener('click', () => {
+        if (expandedProjects.has(group.key)) expandedProjects.delete(group.key)
+        else expandedProjects.add(group.key)
+        renderList()
+      })
+      for (const session of group.sessions) appendSessionButton(content, session, false)
+      section.append(heading, content)
+      list.append(section)
+    }
+    document.querySelector('#count').textContent = `${groups.length} 组 · ${matches.length} 条`
   }
-  if (!groups.length) {
+  if (!matches.length) {
     const empty = document.createElement('p')
     empty.className = 'list-empty'
-    empty.textContent = term ? '没有匹配的项目或会话' : '没有本地会话'
+    empty.textContent = term ? '没有匹配的会话' : '没有本地会话'
     list.append(empty)
   }
-  document.querySelector('#count').textContent = `${groups.length} 组 · ${matches.length} 条`
 }
 async function selectSession(session) {
   setInspectorOpen(false)
@@ -384,6 +396,8 @@ async function load() {
   } catch (error) { document.querySelector('#status').textContent = error.message }
 }
 search.addEventListener('input', () => renderList(true))
+document.querySelector('#view-projects').addEventListener('click', () => { listView = 'projects'; renderList(true) })
+document.querySelector('#view-all').addEventListener('click', () => { listView = 'all'; renderList() })
 document.querySelector('#reload').addEventListener('click', load)
 document.querySelector('#fit').addEventListener('click', resetCamera)
 detailsButton.addEventListener('click', () => setInspectorOpen(!shell.classList.contains('inspector-open')))

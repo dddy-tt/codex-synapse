@@ -16,10 +16,14 @@ body { margin:0; min-width:1120px; color:var(--ink); background:var(--paper); fo
 .canvas path.draft-wire { stroke:#5570c9; stroke-width:2; stroke-dasharray:6 5; }
 .list-heading { display:flex; justify-content:space-between; padding:22px 0 9px; color:var(--muted); font-size:12px; }
 .list-heading strong { color:var(--moss); }
+.list-modes { display:flex; gap:4px; padding:0 0 9px; }
+.list-modes button { flex:1; min-width:0; padding:7px 4px; border:1px solid var(--line); border-radius:5px; background:transparent; color:var(--muted); font:11px 'Noto Sans SC'; cursor:pointer; }
+.list-modes button[aria-pressed="true"] { border-color:var(--moss); background:#e2ebe1; color:var(--moss); font-weight:600; }
 .session-list { overflow:auto; flex:1; margin:0 -12px; padding:0 8px 12px; }
 .project-group { margin:3px 0 7px; }
 .project-heading { display:flex; align-items:center; gap:7px; width:100%; padding:10px 7px; border:0; border-radius:6px; background:transparent; color:var(--ink); text-align:left; cursor:pointer; }
 .project-heading:hover,.project-heading.has-selected { background:#e9ece2; }
+.project-heading:disabled { cursor:default; opacity:1; }
 .project-heading:focus-visible { outline:2px solid var(--moss); outline-offset:-2px; }
 .project-chevron { color:var(--moss); font:16px/1 sans-serif; transition:transform .15s; }
 .project-heading[aria-expanded="true"] .project-chevron { transform:rotate(90deg); }
