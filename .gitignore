@@ -6,3 +6,4 @@ desktop-plugin/dist/
 *.log
 *.png
 *.mp4
+.qa-edge-*/

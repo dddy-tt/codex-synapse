@@ -17,6 +17,8 @@ let requestNumber = 0
 let selectedBranchId = null
 let selectedTurnNumber = null
 let draftTurn = null
+const openProjects = new Set()
+let searchOpenProjects = null
 
 function setInspectorOpen(open) {
   shell.classList.toggle('inspector-open', open)
@@ -26,6 +28,7 @@ function setInspectorOpen(open) {
 
 const formatTime = value => new Intl.DateTimeFormat('zh-CN', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }).format(new Date(value))
 const workspaceName = cwd => cwd === '未关联工作区' ? cwd : cwd.replaceAll('\\','/').split('/').filter(Boolean).at(-1)
+const projectKey = cwd => cwd === '未关联工作区' ? '@unlinked' : String(cwd).replaceAll('\\', '/').replace(/\/+$/, '').toLowerCase()
 function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) }
 function transform() {
   const value = `translate(${camera.x}px,${camera.y}px) scale(${camera.scale})`
@@ -282,24 +285,65 @@ function renderMap() {
   wires.style.height = `${Math.max(canvas.clientHeight, totalRows * 270 + 100)}px`
   transform()
 }
-function renderList() {
+function renderList(expandMatches = false) {
   const term = search.value.trim().toLowerCase()
   const matches = sessions.filter(s => !term || `${s.title} ${s.cwd}`.toLowerCase().includes(term))
-  list.replaceChildren()
+  const groupsByKey = new Map()
   for (const session of matches) {
-    const button = document.createElement('button')
-    button.className = 'session-item'
-    button.classList.toggle('selected', session.id === selectedSession?.id)
-    button.innerHTML = `<strong>${escapeHtml(session.title)}</strong><small>${escapeHtml(workspaceName(session.cwd))} · ${formatTime(session.updatedAt)}</small>`
-    button.addEventListener('click', () => selectSession(session))
-    list.append(button)
+    const key = projectKey(session.cwd)
+    if (!groupsByKey.has(key)) groupsByKey.set(key, { key, cwd:session.cwd, sessions:[] })
+    groupsByKey.get(key).sessions.push(session)
   }
-  document.querySelector('#count').textContent = matches.length
+  const groups = [...groupsByKey.values()].sort((a, b) => (a.key === '@unlinked') - (b.key === '@unlinked'))
+  if (term) {
+    if (expandMatches || !searchOpenProjects) searchOpenProjects = new Set(groups.map(group => group.key))
+  } else searchOpenProjects = null
+  const expandedProjects = searchOpenProjects ?? openProjects
+  list.replaceChildren()
+  for (const group of groups) {
+    const section = document.createElement('section')
+    section.className = 'project-group'
+    const heading = document.createElement('button')
+    heading.type = 'button'
+    heading.className = 'project-heading'
+    heading.classList.toggle('has-selected', group.key === projectKey(selectedSession?.cwd))
+    heading.title = group.cwd
+    const isOpen = expandedProjects.has(group.key)
+    heading.setAttribute('aria-expanded', String(isOpen))
+    heading.setAttribute('aria-label', `${isOpen ? '收起' : '展开'}项目 ${workspaceName(group.cwd)}，${group.sessions.length} 条会话`)
+    heading.innerHTML = `<span class="project-chevron" aria-hidden="true">▸</span><span class="project-label"><strong>${escapeHtml(workspaceName(group.cwd))}</strong><small>${escapeHtml(group.cwd)}</small></span><span class="project-count">${group.sessions.length}</span>`
+    const content = document.createElement('div')
+    content.className = 'project-sessions'
+    content.hidden = !isOpen
+    heading.addEventListener('click', () => {
+      if (expandedProjects.has(group.key)) expandedProjects.delete(group.key)
+      else expandedProjects.add(group.key)
+      renderList()
+    })
+    for (const session of group.sessions) {
+      const button = document.createElement('button')
+      button.className = 'session-item'
+      button.classList.toggle('selected', session.id === selectedSession?.id)
+      button.innerHTML = `<strong>${escapeHtml(session.title)}</strong><small>${formatTime(session.updatedAt)}</small>`
+      button.addEventListener('click', () => selectSession(session))
+      content.append(button)
+    }
+    section.append(heading, content)
+    list.append(section)
+  }
+  if (!groups.length) {
+    const empty = document.createElement('p')
+    empty.className = 'list-empty'
+    empty.textContent = term ? '没有匹配的项目或会话' : '没有本地会话'
+    list.append(empty)
+  }
+  document.querySelector('#count').textContent = `${groups.length} 组 · ${matches.length} 条`
 }
 async function selectSession(session) {
   setInspectorOpen(false)
   draftTurn = null
   selectedSession = session
+  openProjects.add(projectKey(session.cwd))
   turns = []
   branches = []
   selectedBranchId = null
@@ -339,7 +383,7 @@ async function load() {
     if (current) await selectSession(current)
   } catch (error) { document.querySelector('#status').textContent = error.message }
 }
-search.addEventListener('input', renderList)
+search.addEventListener('input', () => renderList(true))
 document.querySelector('#reload').addEventListener('click', load)
 document.querySelector('#fit').addEventListener('click', resetCamera)
 detailsButton.addEventListener('click', () => setInspectorOpen(!shell.classList.contains('inspector-open')))
